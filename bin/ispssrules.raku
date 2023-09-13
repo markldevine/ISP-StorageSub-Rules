@@ -2,6 +2,7 @@
 
 use ISP::Servers;
 use ISP::dsmadmc;
+use Term::TablePrint;
 use Data::Dump::Tree;
 
 sub MAIN (
@@ -17,41 +18,33 @@ sub MAIN (
 
 =finish
 
-      RULENAME: REPL_0200_ISPLC01
-       TGTPOOL: 
-        TGTSRV: ISPLC01
-          TYPE: NOREPLICATING
-         DELAY: 
-    MAXPROCESS: 
-       TGTTYPE: 
-      DURATION: No Limit
-     STARTTIME: 02:00:00
-   DESCRIPTION: 
-        ACTIVE: YES
-       SRCPOOL: 
-      NODELIST: 
-        FSLIST: 
-      NAMETYPE: 
-      CODETYPE: 
-   LASTEXETIME: 
-     PCTUNUSED: 
-     AUDITTYPE: 
-    AUDITLEVEL: 
-   MAXSESSIONS: 10
-TRANSFERMETHOD: TCPIP
+my class RULESET {
+    has Str $.;
+    has Str $.STARTTIME;
+    has Str $.TGTSRV;
+    has NG  $.nodegroup;
+}
 
-PARENTRULENAME: REPL_0000_ISPLC01
- PARENTRULE_ID: 11
-   SUBRULENAME: REPL_DFS_0000_ISPLC01
-    SUBRULE_ID: 1
-   ACTION_TYPE: REPLICATE
-         DELAY: 
-    MAXPROCESS: 
-      NODENAME: DFS
-        NODEID: 
-       PATTERN: 
-          FSID: 
-    IS_PATTERN: NO
-       TGTPOOL: 
-        TGTSRV: ISPLC01
-      DATATYPE: ALL
+[24] @0
+├ 0 = {5} @1
+│ ├ MAXSESSIONS => 10.Str
+│ ├ RULENAME => REPL_0030_ISPLC02.Str
+│ ├ STARTTIME => 00:30:00.Str
+│ ├ TGTSRV => ISPLC02.Str
+│ └ TYPE => NOREPLICATING.Str
+
+[36] @0
+├ 0 = {5} @1
+│ ├ DATATYPE => ALL.Str
+│ ├ NODENAME => DFS.Str
+│ ├ PARENTRULENAME => REPL_0030_ISPLC02.Str
+│ ├ SUBRULENAME => REPL_DFS_0030_ISPLC02.Str
+│ └ TGTSRV => ISPLC02.Str
+
+[6] @0
+├ 1 = {5} @2
+│ ├ Last Update Date/Time => 06/29/23   17:58:28.Str
+│ ├ Last Update by (administrator) => A028441.Str
+│ ├ Node Group Description => .Str
+│ ├ Node Group Member(s) => DFS2K16-12 DFS2K16-13 DFS2K16-14 DFS2K16-15 DFS2K16-16 DFS2K16-17 DFS2K16-18 DFS2K16-19 JGDFS2K12-27PV JGDFS2K12-25PV JGDFS2K12-22 JGDFS2K12-24PV JGDFS2K12-21 DFS2K16-20 DFS2K16-23 JGDFS2K12-26PV DFS2K16-11.Str
+│ └ Node Group Name => DFS.Str
