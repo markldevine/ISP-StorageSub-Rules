@@ -5,24 +5,35 @@ use ISP::dsmadmc;
 use Term::TablePrint;
 use Data::Dump::Tree;
 
+my %node-groups-to-members;
+my %nodes-to-node-groups;
+
 sub MAIN (
         :$isp-server            = '',       #= ISP server name
     Str :$isp-admin             = 'ISPMON', #= ISP admin name
 ) {
     my $SERVER_NAME             = ISP::Servers.new().isp-server($isp-server);
     my ISP::dsmadmc $dsmadmc   .= new(:isp-server($SERVER_NAME), :$isp-admin);
-    ddt $dsmadmc.execute(<SELECT RULENAME,TGTSRV,TYPE,STARTTIME,MAXSESSIONS FROM STGRULES WHERE ACTIVE='YES'>);
-    ddt $dsmadmc.execute(<SELECT PARENTRULENAME,SUBRULENAME,NODENAME,TGTSRV,DATATYPE FROM SUBRULES WHERE ACTION_TYPE='REPLICATE'>);
-    ddt $dsmadmc.execute(<QUERY NODEGROUP FORMAT=DETAILED>);
+#   my $STGRULES                = $dsmadmc.execute(<SELECT RULENAME,TGTSRV,TYPE,STARTTIME,MAXSESSIONS FROM STGRULES WHERE ACTIVE='YES'>);
+#   my $SUBRULES                = $dsmadmc.execute(<SELECT PARENTRULENAME,SUBRULENAME,NODENAME,TGTSRV,DATATYPE FROM SUBRULES WHERE ACTION_TYPE='REPLICATE'>);
+    my @NODEGROUPS              = $dsmadmc.execute(<QUERY NODEGROUP FORMAT=DETAILED>);
+    for @NODEGROUPS -> $node-group {
+        my @node-group-members  = Nil;
+        @node-group-members     = split(/\s/, $node-group{'Node Group Member(s)'});
+        %node-groups-to-members{$node-group{'Node Group Name'}} = @node-group-members;
+    }
+ddt %node-groups-to-members;
 }
 
 =finish
 
-my class RULESET {
-    has Str $.;
-    has Str $.STARTTIME;
-    has Str $.TGTSRV;
-    has NG  $.nodegroup;
+my class STGRULE {
+    has Int         $.MAXSESSIONS;
+    has Str         $.RULENAME;
+    has DateTime    $.STARTTIME;
+    has             %.subrules;
+    has Str         $.TGTSRV;
+    has NODEGROUP   $.nodegroup;
 }
 
 [24] @0
