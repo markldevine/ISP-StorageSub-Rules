@@ -6,7 +6,7 @@ use Term::TablePrint;
 use Data::Dump::Tree;
 
 my %node-groups-to-members;
-my %nodes-to-node-groups;
+my %node-to-node-group;
 
 sub MAIN (
         :$isp-server            = '',       #= ISP server name
@@ -14,15 +14,29 @@ sub MAIN (
 ) {
     my $SERVER_NAME             = ISP::Servers.new().isp-server($isp-server);
     my ISP::dsmadmc $dsmadmc   .= new(:isp-server($SERVER_NAME), :$isp-admin);
-#   my $STGRULES                = $dsmadmc.execute(<SELECT RULENAME,TGTSRV,TYPE,STARTTIME,MAXSESSIONS FROM STGRULES WHERE ACTIVE='YES'>);
-#   my $SUBRULES                = $dsmadmc.execute(<SELECT PARENTRULENAME,SUBRULENAME,NODENAME,TGTSRV,DATATYPE FROM SUBRULES WHERE ACTION_TYPE='REPLICATE'>);
-    my @NODEGROUPS              = $dsmadmc.execute(<QUERY NODEGROUP FORMAT=DETAILED>);
-    for @NODEGROUPS -> $node-group {
-        my @node-group-members  = Nil;
-        @node-group-members     = split(/\s/, $node-group{'Node Group Member(s)'});
-        %node-groups-to-members{$node-group{'Node Group Name'}} = @node-group-members;
+
+    my @STGRULES                = $dsmadmc.execute(<SELECT RULENAME,TGTSRV,TYPE,STARTTIME,MAXSESSIONS FROM STGRULES WHERE ACTIVE='YES'>);
+    for @STGRULES -> $stgrule {
+        my $hour;
+        my $minute;
+        my $second;
+        ($hour, $minute, $second) = $stgrule{'STARTTIME'}.split(':');
+        my $date-time           = DateTime.new(date => Date.today, :$hour, :$minute, :$second, :timezone($dsmadmc.seconds-offset-UTC));
+        put $stgrule{'RULENAME'} ~ ' ' ~ $date-time;
     }
-ddt %node-groups-to-members;
+#   my @SUBRULES                = $dsmadmc.execute(<SELECT PARENTRULENAME,SUBRULENAME,NODENAME,TGTSRV,DATATYPE FROM SUBRULES WHERE ACTION_TYPE='REPLICATE'>);
+
+#   my @NODEGROUPS              = $dsmadmc.execute(<QUERY NODEGROUP FORMAT=DETAILED>);
+#   for @NODEGROUPS -> $node-group {
+#       my @node-group-members  = Nil;
+#       @node-group-members     = split(/\s/, $node-group{'Node Group Member(s)'});
+#       %node-groups-to-members{$node-group{'Node Group Name'}} = @node-group-members;
+#       for @node-group-members -> $member {
+#           %node-to-node-group{$member} = $node-group{'Node Group Name'};
+#       }
+#   }
+#ddt %node-groups-to-members;
+#ddt %node-to-node-group;
 }
 
 =finish
@@ -33,7 +47,7 @@ my class STGRULE {
     has DateTime    $.STARTTIME;
     has             %.subrules;
     has Str         $.TGTSRV;
-    has NODEGROUP   $.nodegroup;
+    has Str         $.nodes;
 }
 
 [24] @0
