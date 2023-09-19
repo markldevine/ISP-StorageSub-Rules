@@ -5,42 +5,16 @@ use ISP::dsmadmc;
 use Term::TablePrint;
 use Data::Dump::Tree;
 
-my %node-groups-to-members;
-my %node-to-node-group;
-
-sub MAIN (
-        :$isp-server            = '',       #= ISP server name
-    Str :$isp-admin             = 'ISPMON', #= ISP admin name
-) {
-    my $SERVER_NAME             = ISP::Servers.new().isp-server($isp-server);
-    my ISP::dsmadmc $dsmadmc   .= new(:isp-server($SERVER_NAME), :$isp-admin);
-
-    my @STGRULES                = $dsmadmc.execute(<SELECT RULENAME,TGTSRV,TYPE,STARTTIME,MAXSESSIONS FROM STGRULES WHERE ACTIVE='YES'>);
-    for @STGRULES -> $stgrule {
-        my $hour;
-        my $minute;
-        my $second;
-        ($hour, $minute, $second) = $stgrule{'STARTTIME'}.split(':');
-        my $date-time           = DateTime.new(date => Date.today, :$hour, :$minute, :$second, :timezone($dsmadmc.seconds-offset-UTC));
-        put $stgrule{'RULENAME'} ~ ' ' ~ $date-time;
-    }
-#   my @SUBRULES                = $dsmadmc.execute(<SELECT PARENTRULENAME,SUBRULENAME,NODENAME,TGTSRV,DATATYPE FROM SUBRULES WHERE ACTION_TYPE='REPLICATE'>);
-
-#   my @NODEGROUPS              = $dsmadmc.execute(<QUERY NODEGROUP FORMAT=DETAILED>);
-#   for @NODEGROUPS -> $node-group {
-#       my @node-group-members  = Nil;
-#       @node-group-members     = split(/\s/, $node-group{'Node Group Member(s)'});
-#       %node-groups-to-members{$node-group{'Node Group Name'}} = @node-group-members;
-#       for @node-group-members -> $member {
-#           %node-to-node-group{$member} = $node-group{'Node Group Name'};
-#       }
-#   }
-#ddt %node-groups-to-members;
-#ddt %node-to-node-group;
+my %subrule;
+my class SUBRULE {
+    has Str         $.DATATYPE;
+    has Str         $.NODENAME;
+    has Str         $.PARENTRULENAME;
+    has Str         $.SUBRULENAME;
+    has Str         $.TGTSRV;
 }
 
-=finish
-
+my %stgrules;
 my class STGRULE {
     has Int         $.MAXSESSIONS;
     has Str         $.RULENAME;
@@ -49,6 +23,70 @@ my class STGRULE {
     has Str         $.TGTSRV;
     has Str         $.nodes;
 }
+
+my %node-groups-to-members;
+my %node-to-node-group;
+
+sub MAIN (
+        :$isp-server                = '',       #= ISP server name
+    Str :$isp-admin                 = 'ISPMON', #= ISP admin name
+) {
+    my $SERVER_NAME                 = ISP::Servers.new().isp-server($isp-server);
+    my ISP::dsmadmc $dsmadmc       .= new(:isp-server($SERVER_NAME), :$isp-admin);
+
+    my @NODEGROUPS                  = $dsmadmc.execute(<QUERY NODEGROUP FORMAT=DETAILED>);
+    for @NODEGROUPS -> $node-group {
+        my @node-group-members      = Nil;
+        @node-group-members         = split(/\s/, $node-group{'Node Group Member(s)'});
+        %node-groups-to-members{$node-group{'Node Group Name'}} = @node-group-members;
+        for @node-group-members -> $member {
+            %node-to-node-group{$member} = $node-group{'Node Group Name'};
+        }
+    }
+#ddt %node-groups-to-members;
+#ddt %node-to-node-group;
+
+    my @SUBRULES                    = $dsmadmc.execute(<SELECT PARENTRULENAME,SUBRULENAME,NODENAME,TGTSRV,DATATYPE FROM SUBRULES WHERE ACTION_TYPE='REPLICATE'>);
+    for @SUBRULES -> $subrule {
+        my $subrule-name            = $subrule{'SUBRULENAME'};
+        %subrule{$subrule-name}     = SUBRULE.new(
+                                                    :DATATYPE($subrule{'DATATYPE'}),
+                                                    :NODENAME($subrule{'NODENAME'}),
+                                                    :PARENTRULENAME($subrule{'PARENTRULENAME'}),
+                                                    :SUBRULENAME($subrule-name),
+                                                    :TGTSRV($subrule{'TGTSRV'}),
+                                      );
+    }
+#ddt %subrule;
+
+    my @STGRULES                    = $dsmadmc.execute(<SELECT RULENAME,TGTSRV,TYPE,STARTTIME,MAXSESSIONS FROM STGRULES WHERE ACTIVE='YES'>);
+    for @STGRULES -> $stgrule {
+        my $stgrule-name            = $stgrule{'RULENAME'};
+        for %subrule.keys -> $subrule-name {
+            next                    unless %subrule{$subrule-name}.PARENTRULENAME eq $stgrule-name;
+put $stgrule-name ~ ' ' ~ $subrule-name;
+        }
+}
+}
+=finish
+        my $hour;
+        my $minute;
+        my $second;
+        ($hour, $minute, $second)   = $stgrule{'STARTTIME'}.split(':');
+        my $start-date-time         = DateTime.new(date => Date.today, :$hour, :$minute, :$second, :timezone($dsmadmc.seconds-offset-UTC));
+
+        %stgrule{$stgrule-name}     = STGRULE.new(
+                                                    :MAXSESSIONS(%stgrule<MAXSESSIONS>),
+                                                    :RULENAME($stgrule-name),
+                                                    :STARTTIME($start-date-time),
+                                                    :subrules(),
+                                                    :TGTSRV(%stgrule<TGTSRV>),
+                                                    :nodes(),
+                                      );
+    }
+}
+
+=finish
 
 [24] @0
 ├ 0 = {5} @1
