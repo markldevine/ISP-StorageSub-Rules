@@ -102,7 +102,7 @@ sub MAIN (
                                     ];
         }
     }
-    $table.print-table(@rows, :mouse(1));
+    $table.print-table(@rows, :mouse(0));
 }
 
 =finish
