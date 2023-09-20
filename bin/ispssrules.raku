@@ -14,14 +14,13 @@ my class SUBRULE {
     has Str         $.TGTSRV;
 }
 
-my %stgrules;
+my %stgrule;
 my class STGRULE {
-    has Int         $.MAXSESSIONS;
+    has             $.MAXSESSIONS;
     has Str         $.RULENAME;
     has DateTime    $.STARTTIME;
-    has             %.subrules;
-    has Str         $.TGTSRV;
-    has Str         $.nodes;
+    has             $.subrules;
+    has             $.TGTSRV;
 }
 
 my %node-groups-to-members;
@@ -43,7 +42,7 @@ sub MAIN (
             %node-to-node-group{$member} = $node-group{'Node Group Name'};
         }
     }
-#ddt %node-groups-to-members;
+#dt %node-groups-to-members;
 #ddt %node-to-node-group;
 
     my @SUBRULES                    = $dsmadmc.execute(<SELECT PARENTRULENAME,SUBRULENAME,NODENAME,TGTSRV,DATATYPE FROM SUBRULES WHERE ACTION_TYPE='REPLICATE'>);
@@ -62,52 +61,48 @@ sub MAIN (
     my @STGRULES                    = $dsmadmc.execute(<SELECT RULENAME,TGTSRV,TYPE,STARTTIME,MAXSESSIONS FROM STGRULES WHERE ACTIVE='YES'>);
     for @STGRULES -> $stgrule {
         my $stgrule-name            = $stgrule{'RULENAME'};
+        my %subrules-of-stgrule;
         for %subrule.keys -> $subrule-name {
-            next                    unless %subrule{$subrule-name}.PARENTRULENAME eq $stgrule-name;
-put $stgrule-name ~ ' ' ~ $subrule-name;
+            %subrules-of-stgrule{$subrule-name} = %subrule{$subrule-name} if %subrule{$subrule-name}.PARENTRULENAME eq $stgrule-name;
         }
-}
-}
-=finish
         my $hour;
         my $minute;
         my $second;
         ($hour, $minute, $second)   = $stgrule{'STARTTIME'}.split(':');
         my $start-date-time         = DateTime.new(date => Date.today, :$hour, :$minute, :$second, :timezone($dsmadmc.seconds-offset-UTC));
-
         %stgrule{$stgrule-name}     = STGRULE.new(
-                                                    :MAXSESSIONS(%stgrule<MAXSESSIONS>),
+                                                    :MAXSESSIONS($stgrule<MAXSESSIONS>),
                                                     :RULENAME($stgrule-name),
                                                     :STARTTIME($start-date-time),
-                                                    :subrules(),
-                                                    :TGTSRV(%stgrule<TGTSRV>),
-                                                    :nodes(),
+                                                    :subrules(%subrules-of-stgrule),
+                                                    :TGTSRV($stgrule<TGTSRV>),
                                       );
     }
+#ddt %stgrule;
+
+    my %stgrule-by-time;
+    my $i                           = 0;
+    for %stgrule.keys -> $stgrule-name {
+        my $key                     = %stgrule{$stgrule-name}.STARTTIME ~ '_' ~ $i++;
+        %stgrule-by-time{$key}      = $stgrule-name;
+    }
+    my $table                       = Term::TablePrint.new();
+    my @rows.push:                  [ 'Storage Rule', 'Sub Rule', 'Start Time', 'Sessions', 'Target Server', 'Data Type', 'Nodegroup/Node(s)' ];
+    for %stgrule-by-time.keys.sort -> $key {
+        my $stgrule-name            = %stgrule-by-time{$key};
+        for %stgrule{$stgrule-name}.subrules.keys.sort -> $subrule-name {
+            @rows.push:             [
+                                        $stgrule-name,
+                                        $subrule-name,
+                                        sprintf("%02d:%02d:%02d", %stgrule{$stgrule-name}.STARTTIME.hour, %stgrule{$stgrule-name}.STARTTIME.minute, %stgrule{$stgrule-name}.STARTTIME.second),
+                                        %stgrule{$stgrule-name}.MAXSESSIONS,
+                                        %stgrule{$stgrule-name}.subrules{$subrule-name}.TGTSRV,
+                                        %stgrule{$stgrule-name}.subrules{$subrule-name}.DATATYPE,
+                                        %stgrule{$stgrule-name}.subrules{$subrule-name}.NODENAME,
+                                    ];
+        }
+    }
+    $table.print-table(@rows, :mouse(1));
 }
 
 =finish
-
-[24] @0
-├ 0 = {5} @1
-│ ├ MAXSESSIONS => 10.Str
-│ ├ RULENAME => REPL_0030_ISPLC02.Str
-│ ├ STARTTIME => 00:30:00.Str
-│ ├ TGTSRV => ISPLC02.Str
-│ └ TYPE => NOREPLICATING.Str
-
-[36] @0
-├ 0 = {5} @1
-│ ├ DATATYPE => ALL.Str
-│ ├ NODENAME => DFS.Str
-│ ├ PARENTRULENAME => REPL_0030_ISPLC02.Str
-│ ├ SUBRULENAME => REPL_DFS_0030_ISPLC02.Str
-│ └ TGTSRV => ISPLC02.Str
-
-[6] @0
-├ 1 = {5} @2
-│ ├ Last Update Date/Time => 06/29/23   17:58:28.Str
-│ ├ Last Update by (administrator) => A028441.Str
-│ ├ Node Group Description => .Str
-│ ├ Node Group Member(s) => DFS2K16-12 DFS2K16-13 DFS2K16-14 DFS2K16-15 DFS2K16-16 DFS2K16-17 DFS2K16-18 DFS2K16-19 JGDFS2K12-27PV JGDFS2K12-25PV JGDFS2K12-22 JGDFS2K12-24PV JGDFS2K12-21 DFS2K16-20 DFS2K16-23 JGDFS2K12-26PV DFS2K16-11.Str
-│ └ Node Group Name => DFS.Str
