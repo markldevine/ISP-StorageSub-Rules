@@ -86,7 +86,7 @@ sub MAIN (
         my $key                     = %stgrule{$stgrule-name}.STARTTIME ~ '_' ~ $i++;
         %stgrule-by-time{$key}      = $stgrule-name;
     }
-    my $table                       = Term::TablePrint.new();
+    my $table                       = Term::TablePrint.new(:footer('ISP Server: ' ~ $SERVER_NAME ~ '  ISP Admin: ' ~ $isp-admin));
     my @rows.push:                  [ 'Storage Rule', 'Sub Rule', 'Start Time', 'Sessions', 'Target Server', 'Data Type', 'Nodegroup/Node(s)' ];
     for %stgrule-by-time.keys.sort -> $key {
         my $stgrule-name            = %stgrule-by-time{$key};
