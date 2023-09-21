@@ -97,7 +97,7 @@ sub MAIN (
 }
 
 sub stgrule-by-time {
-    my $table                       = Term::TablePrint.new(:footer('ISP Server: ' ~ $SERVER_NAME ~ '  ISP Admin: ' ~ $ADMIN_NAME));
+    my $table                       = Term::TablePrint.new(:footer('ISP Server: ' ~ $SERVER_NAME ~ '  ISP Admin: ' ~ $ADMIN_NAME), :save-screen);
     my @rows.push:                  [ 'Storage Rule', 'Sub Rule', 'Start Time', 'Sessions', 'Target Server', 'Data Type', 'Nodegroup/Node(s)' ];
     my %stgrule-by-time;
     my $i                           = 0;
@@ -124,7 +124,7 @@ sub stgrule-by-time {
 
 sub stgrule-by-node {
     die 'Unknown node: ' ~ $NODE unless %node-to-node-group{$NODE}:exists;
-    my $table                       = Term::TablePrint.new(:footer('ISP Server: ' ~ $SERVER_NAME ~ '  ISP Admin: ' ~ $ADMIN_NAME ~ '  NODE: ' ~ $NODE));
+    my $table                       = Term::TablePrint.new(:footer('ISP Server: ' ~ $SERVER_NAME ~ '  ISP Admin: ' ~ $ADMIN_NAME ~ '  NODE: ' ~ $NODE), :save-screen);
     my @rows.push:                  [ 'Storage Rule', 'Sub Rule', 'Start Time', 'Sessions', 'Target Server', 'Data Type', 'Nodegroup/Node(s)' ];
     my @node-specifications         = $NODE;
     for %node-to-node-group{$NODE}.list -> $node-group {
