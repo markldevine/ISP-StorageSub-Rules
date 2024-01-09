@@ -33,13 +33,14 @@ my %node-to-node-group;
 sub MAIN (
             :$isp-server            = '',       #= ISP server name
     Str     :$isp-admin             = 'ISPMON', #= ISP admin name
-    Str     :$node                              #= Show STGRULEs by node
+    Str     :$node,                             #= Show STGRULEs by node
+    Bool    :$cache                             #= Read from cache
 ) {
     $SERVER_NAME                    = ISP::Servers.new().isp-server($isp-server).uc;
     $ADMIN_NAME                     = $isp-admin.uc;
     $NODE                           = $node.uc with $node;
 
-    my ISP::dsmadmc $dsmadmc       .= new(:isp-server($SERVER_NAME), :isp-admin($ADMIN_NAME));
+    my ISP::dsmadmc $dsmadmc       .= new(:isp-server($SERVER_NAME), :isp-admin($ADMIN_NAME), :$cache);
 
     my @NODEGROUPS                  = $dsmadmc.execute(<QUERY NODEGROUP FORMAT=DETAILED>);
     for @NODEGROUPS -> $node-group {
