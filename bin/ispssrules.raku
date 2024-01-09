@@ -42,8 +42,8 @@ sub MAIN (
 
     my ISP::dsmadmc $dsmadmc       .= new(:isp-server($SERVER_NAME), :isp-admin($ADMIN_NAME), :$cache);
 
-    my @NODEGROUPS                  = $dsmadmc.execute(<QUERY NODEGROUP FORMAT=DETAILED>);
-    for @NODEGROUPS -> $node-group {
+    my $NODEGROUPS                  = $dsmadmc.execute(<QUERY NODEGROUP FORMAT=DETAILED>);
+    for $NODEGROUPS.list -> $node-group {
         my @node-group-members      = Nil;
         @node-group-members         = split(/\s/, $node-group{'Node Group Member(s)'});
         %node-groups-to-members{$node-group{'Node Group Name'}} = @node-group-members;
@@ -54,8 +54,8 @@ sub MAIN (
 #ddt %node-groups-to-members;
 #ddt %node-to-node-group;
 
-    my @SUBRULES                    = $dsmadmc.execute(<SELECT PARENTRULENAME,SUBRULENAME,NODENAME,TGTSRV,DATATYPE FROM SUBRULES WHERE ACTION_TYPE='REPLICATE'>);
-    for @SUBRULES -> $subrule {
+    my $SUBRULES                    = $dsmadmc.execute(<SELECT PARENTRULENAME,SUBRULENAME,NODENAME,TGTSRV,DATATYPE FROM SUBRULES WHERE ACTION_TYPE='REPLICATE'>);
+    for $SUBRULES.list -> $subrule {
         my $subrule-name            = $subrule{'SUBRULENAME'};
         %subrule{$subrule-name}     = SUBRULE.new(
                                                     :DATATYPE($subrule{'DATATYPE'}),
@@ -67,8 +67,8 @@ sub MAIN (
     }
 #ddt %subrule;
 
-    my @STGRULES                    = $dsmadmc.execute(<SELECT RULENAME,TGTSRV,TYPE,STARTTIME,MAXSESSIONS FROM STGRULES WHERE ACTIVE='YES'>);
-    for @STGRULES -> $stgrule {
+    my $STGRULES                    = $dsmadmc.execute(<SELECT RULENAME,TGTSRV,TYPE,STARTTIME,MAXSESSIONS FROM STGRULES WHERE ACTIVE='YES'>);
+    for $STGRULES.list -> $stgrule {
         my $stgrule-name            = $stgrule{'RULENAME'};
         my %subrules-of-stgrule;
         for %subrule.keys -> $subrule-name {
